@@ -1,6 +1,7 @@
 import * as mongoose from "mongoose";
 import Types from "../types";
 import User from "./shema";
+import { Error } from "mongoose";
 
 class DataBase {
   readonly url = "mongodb://127.0.0.1:27017";
@@ -27,10 +28,23 @@ class DataBase {
     }
   };
 
-  public getUser = (email: string) => {
-    User.find({ email: "example@exl.ru" }).then((e) => {
-      console.log("User", e);
-    });
+  public login = async (email: string) => {
+    return User.findOne({ email })
+      .then((user) => {
+        return new Promise((resolve, reject) => {
+          if (user) {
+            const validPassword = user.validatePassword(user.password);
+            if (!validPassword) {
+              return new Error("Email or password not valid");
+            }
+            resolve("IsValid");
+          }
+          reject("Email or password not valid");
+        });
+      })
+      .catch((e) => {
+        console.error(`Error to get user ${email}`, e);
+      });
   };
 
   public clear = () => {

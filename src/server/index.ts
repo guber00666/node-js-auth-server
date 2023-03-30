@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import DataBase from "../db";
+import Types from "../types";
 
 const express = require("express");
 
@@ -16,22 +17,40 @@ app.get("/", function (req: Request, res: Response) {
   console.warn("Server was started on localhost: 3000");
 });
 
-app.post("/register", urlencodedParser, (req: Request, res: Response) => {
-  if (!req.body) return res.sendStatus(400);
-  db.checkUserExist(req.body.email).then((user) => {
-    console.log("user", req.body);
-    if (user) {
-      console.error(`User with email ${req.body.email} already, exist!!!`);
-    } else {
-      db.register(req.body);
-    }
-  });
-  return res.send(req.body);
-});
+app.post(
+  "/register",
+  urlencodedParser,
+  (req: Request<Types.UserPayload>, res: Response) => {
+    if (!req.body) return res.sendStatus(400);
+    db.checkUserExist(req.body.email).then((user) => {
+      console.log("user", req.body);
+      if (user) {
+        console.error(`User with email ${req.body.email} already, exist!!!`);
+      } else {
+        db.register(req.body);
+      }
+    });
+    return res.send(req.body);
+  }
+);
+
+app.post(
+  "/login",
+  urlencodedParser,
+  (req: Request<Types.UserPayload>, res: Response) => {
+    if (!req.body) return res.sendStatus(400);
+    db.login(req.body.email)
+      .then((r) => {
+        console.log("r", r);
+      })
+      .catch((e) => {
+        res.status(401).send(e);
+      });
+    return res.send(req.body);
+  }
+);
 
 // db.clear();
-
-db.getUser("fess00666");
 
 app.listen(3000);
 
