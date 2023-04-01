@@ -1,7 +1,10 @@
-import * as mongoose from "mongoose";
 import Types from "../types";
 import User from "./shema";
 import { Error } from "mongoose";
+import * as mongoose from "mongoose";
+import * as jwt from "jsonwebtoken";
+
+const SECRET_KEY = "auth-server-node-js-secret";
 
 class DataBase {
   readonly url = "mongodb://127.0.0.1:27017";
@@ -20,52 +23,49 @@ class DataBase {
     });
   };
 
-  public checkUserExist = async (email: string) => {
-    try {
-      return await User.exists({ email });
-    } catch (e) {
-      console.error("Error to check", e);
-    }
+  public checkUserExist = (email: string) => {
+    return User.exists({ email });
   };
 
-  public login = async (email: string) => {
-    return User.findOne({ email })
-      .then((user) => {
-        return new Promise((resolve, reject) => {
-          if (user) {
-            const validPassword = user.validatePassword(user.password);
-            if (!validPassword) {
-              return new Error("Email or password not valid");
-            }
-            resolve("IsValid");
+  public login = async (
+    email: string,
+    password: string
+  ): Promise<string | Error> => {
+    return User.findOne({ email }).then((user) => {
+      return new Promise((resolve, reject) => {
+        if (user) {
+          const validPassword = user.validatePassword(password);
+          if (!validPassword) {
+            reject(new Error("Email or password not valid"));
+          } else {
+            const payload = {
+              id: user._id,
+              name: user.name,
+              email: user.email,
+              password: user.password,
+            };
+            resolve(jwt.sign(payload, SECRET_KEY));
           }
-          reject("Email or password not valid");
-        });
-      })
-      .catch((e) => {
-        console.error(`Error to get user ${email}`, e);
+        }
       });
+    });
   };
 
-  public clear = () => {
-    User.deleteMany({ name: "fess00666" }).then((e) => console.log(e));
-  };
-
-  public register = async (payload: Types.UserPayload) => {
+  public register = async (
+    payload: Types.UserPayload
+  ): Promise<Types.UserPayload | Error | void> => {
     const newUser = new User();
     try {
       newUser.name = payload.name;
       newUser.email = payload.email;
       newUser.password = payload.password;
       newUser.setPassword(payload.password);
-      try {
-        newUser.save();
-        console.warn("User was added");
-      } catch (e) {
-        console.error("Error to add new user");
-      }
+      newUser.save();
+      return newUser;
     } catch (e) {
-      console.error("Error to add user", e);
+      if (e instanceof Error) {
+        return e;
+      }
     }
   };
 }

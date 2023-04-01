@@ -12,25 +12,22 @@ db.connect();
 
 const urlencodedParser = express.urlencoded({ extended: false });
 
-app.get("/", function (req: Request, res: Response) {
-  res.send("Hello World");
-  console.warn("Server was started on localhost: 3000");
-});
-
 app.post(
   "/register",
   urlencodedParser,
   (req: Request<Types.UserPayload>, res: Response) => {
     if (!req.body) return res.sendStatus(400);
     db.checkUserExist(req.body.email).then((user) => {
-      console.log("user", req.body);
       if (user) {
-        console.error(`User with email ${req.body.email} already, exist!!!`);
+        return res
+          .status(400)
+          .send(`User with email ${req.body.email} already, exist!!!`);
       } else {
-        db.register(req.body);
+        db.register(req.body).then((u) => {
+          return res.status(200).send(u);
+        });
       }
     });
-    return res.send(req.body);
   }
 );
 
@@ -39,18 +36,15 @@ app.post(
   urlencodedParser,
   (req: Request<Types.UserPayload>, res: Response) => {
     if (!req.body) return res.sendStatus(400);
-    db.login(req.body.email)
-      .then((r) => {
-        console.log("r", r);
+    db.login(req.body.email, req.body.password)
+      .then((token) => {
+        return res.status(200).send({ token });
       })
       .catch((e) => {
-        res.status(401).send(e);
+        return res.status(401).send(e);
       });
-    return res.send(req.body);
   }
 );
-
-// db.clear();
 
 app.listen(3000);
 
