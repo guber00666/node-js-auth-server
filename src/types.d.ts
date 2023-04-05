@@ -12,6 +12,7 @@ declare namespace Types {
     validatePassword: (password: string) => boolean;
     hash: string;
     salt: string;
+    token: string;
   };
 }
 

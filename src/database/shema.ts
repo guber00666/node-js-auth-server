@@ -10,6 +10,7 @@ const UserSchema = new Schema<Types.IUser>({
   password: { type: String, required: true },
   hash: String,
   salt: String,
+  token: String,
 });
 
 UserSchema.methods.setPassword = function (password: string) {
